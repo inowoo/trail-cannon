@@ -1,6 +1,6 @@
 "use strict";
 
-const VERSION = "v0.5.0";
+const VERSION = "v0.5.1";
 const W = 960;
 const H = 540;
 const TAU = Math.PI * 2;
@@ -1552,202 +1552,271 @@ function drawPlayerRobot(x, y, cannonAngle, scale) {
   ctx.translate(x, y);
   ctx.scale(scale, scale);
 
-  const armor = "#b93f42";
-  const armorHi = "#e25b52";
-  const frame = "#232b35";
-  const frameHi = "#526170";
-  const trim = "#e7e0d9";
-  const sensor = "#8ff2ff";
-  const accent = "#f0b45a";
+  const red = "#a9373c";
+  const redHi = "#d44a47";
+  const white = "#eee9e3";
+  const whiteShade = "#c9c8c5";
+  const frame = "#20262d";
+  const frameHi = "#4b5560";
+  const cyan = "#7feaff";
+  const cyanDim = "#3ba8b9";
 
-  ctx.strokeStyle = trim;
-  ctx.lineWidth = 1.7;
+  ctx.strokeStyle = "#e7ddd6";
+  ctx.lineWidth = 1.6;
 
-  // swept backpack and rear thruster
+  // Backpack block inspired by option 3: compact, military, dense.
   ctx.fillStyle = frame;
   ctx.beginPath();
-  ctx.moveTo(-22, -20);
-  ctx.lineTo(-8, -27);
-  ctx.lineTo(-6, 13);
-  ctx.lineTo(-23, 20);
-  ctx.lineTo(-28, 8);
+  roundedRectPath(-25, -27, 18, 44, 4);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = cyanDim;
+  ctx.fillRect(-23, -18, 4, 10);
+  ctx.fillRect(-23, 1, 4, 10);
+
+  // Rear shoulder armor.
+  ctx.fillStyle = red;
+  ctx.beginPath();
+  ctx.moveTo(-18, -25);
+  ctx.lineTo(-3, -29);
+  ctx.lineTo(1, -13);
+  ctx.lineTo(-15, -8);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = accent;
-  ctx.beginPath();
-  ctx.moveTo(-25, 5);
-  ctx.lineTo(-39, 11);
-  ctx.lineTo(-24, 15);
-  ctx.closePath();
-  ctx.fill();
-
-  // rear leg
+  // Rear leg.
   ctx.fillStyle = frameHi;
   ctx.beginPath();
-  ctx.moveTo(-8, 13);
-  ctx.lineTo(2, 14);
-  ctx.lineTo(0, 40);
-  ctx.lineTo(-11, 42);
+  ctx.moveTo(-8, 12);
+  ctx.lineTo(1, 14);
+  ctx.lineTo(-2, 43);
+  ctx.lineTo(-12, 43);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // angular torso
-  ctx.fillStyle = armor;
+  // Main torso: broader and more armored than previous design.
+  ctx.fillStyle = red;
   ctx.beginPath();
-  ctx.moveTo(-12, -23);
-  ctx.lineTo(9, -24);
-  ctx.lineTo(20, -14);
-  ctx.lineTo(17, 4);
-  ctx.lineTo(8, 16);
-  ctx.lineTo(-8, 15);
-  ctx.lineTo(-17, 1);
-  ctx.lineTo(-16, -12);
+  ctx.moveTo(-12, -24);
+  ctx.lineTo(8, -26);
+  ctx.lineTo(24, -17);
+  ctx.lineTo(26, -2);
+  ctx.lineTo(15, 13);
+  ctx.lineTo(4, 18);
+  ctx.lineTo(-10, 14);
+  ctx.lineTo(-19, 1);
+  ctx.lineTo(-18, -12);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // white chest wedge
-  ctx.fillStyle = trim;
+  // White chest wedge.
+  ctx.fillStyle = white;
   ctx.beginPath();
-  ctx.moveTo(1, -18);
-  ctx.lineTo(15, -13);
-  ctx.lineTo(11, -3);
-  ctx.lineTo(0, -5);
+  ctx.moveTo(2, -20);
+  ctx.lineTo(18, -15);
+  ctx.lineTo(16, -5);
+  ctx.lineTo(3, -2);
+  ctx.lineTo(-3, -9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = whiteShade;
+  ctx.stroke();
+
+  // Cyan chest sensor.
+  ctx.fillStyle = cyan;
+  ctx.beginPath();
+  ctx.moveTo(11, -10);
+  ctx.lineTo(19, -8);
+  ctx.lineTo(17, -4);
+  ctx.lineTo(10, -5);
   ctx.closePath();
   ctx.fill();
 
-  // waist
+  // Waist.
+  ctx.strokeStyle = "#e7ddd6";
   ctx.fillStyle = frame;
   ctx.beginPath();
   roundedRectPath(-8, 10, 18, 8, 2);
   ctx.fill();
   ctx.stroke();
 
-  // head profile with crest
+  // Head: compact military profile, shorter crest than option 2/4.
+  ctx.fillStyle = red;
+  ctx.beginPath();
+  ctx.moveTo(-5, -42);
+  ctx.lineTo(9, -43);
+  ctx.lineTo(17, -37);
+  ctx.lineTo(16, -29);
+  ctx.lineTo(3, -26);
+  ctx.lineTo(-7, -30);
+  ctx.lineTo(-10, -36);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // White face plate.
+  ctx.fillStyle = white;
+  ctx.beginPath();
+  ctx.moveTo(5, -37);
+  ctx.lineTo(16, -35);
+  ctx.lineTo(13, -29);
+  ctx.lineTo(5, -29);
+  ctx.lineTo(1, -33);
+  ctx.closePath();
+  ctx.fill();
+
+  // Single horn / antenna from option 3.
+  ctx.fillStyle = white;
+  ctx.beginPath();
+  ctx.moveTo(0, -42);
+  ctx.lineTo(7, -53);
+  ctx.lineTo(5, -41);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = cyan;
+  ctx.fillRect(7, -35, 8, 2.5);
+
+  // Large forward shoulder armor.
+  ctx.fillStyle = redHi;
+  ctx.beginPath();
+  ctx.moveTo(6, -22);
+  ctx.lineTo(23, -19);
+  ctx.lineTo(27, -9);
+  ctx.lineTo(12, -5);
+  ctx.lineTo(6, -10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#f0ddd5";
+  ctx.stroke();
+
+  // Small white marking suggesting "03".
+  ctx.fillStyle = white;
+  ctx.fillRect(11, -17, 7, 2);
+  ctx.fillRect(11, -13, 5, 2);
+
+  // Arm.
   ctx.fillStyle = frame;
   ctx.beginPath();
-  ctx.moveTo(-5, -41);
-  ctx.lineTo(8, -42);
-  ctx.lineTo(18, -36);
-  ctx.lineTo(15, -28);
-  ctx.lineTo(-6, -28);
-  ctx.lineTo(-10, -34);
+  ctx.moveTo(18, -7);
+  ctx.lineTo(25, -3);
+  ctx.lineTo(21, 16);
+  ctx.lineTo(12, 15);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = armorHi;
+  ctx.fillStyle = red;
   ctx.beginPath();
-  ctx.moveTo(-3, -42);
-  ctx.lineTo(1, -52);
-  ctx.lineTo(4, -42);
+  ctx.moveTo(13, 12);
+  ctx.lineTo(22, 13);
+  ctx.lineTo(22, 20);
+  ctx.lineTo(12, 19);
   ctx.closePath();
   ctx.fill();
 
-  ctx.fillStyle = sensor;
+  // Front thigh: strong white armor, option 3 signature.
+  ctx.fillStyle = white;
   ctx.beginPath();
-  ctx.moveTo(7, -36);
-  ctx.lineTo(17, -35);
-  ctx.lineTo(13, -31);
-  ctx.lineTo(6, -32);
+  ctx.moveTo(3, 16);
+  ctx.lineTo(15, 16);
+  ctx.lineTo(17, 29);
+  ctx.lineTo(11, 34);
+  ctx.lineTo(1, 31);
   ctx.closePath();
   ctx.fill();
-
-  // compact shoulder armor
-  ctx.fillStyle = armorHi;
-  ctx.beginPath();
-  ctx.moveTo(8, -20);
-  ctx.lineTo(20, -17);
-  ctx.lineTo(21, -9);
-  ctx.lineTo(10, -7);
-  ctx.closePath();
-  ctx.fill();
+  ctx.strokeStyle = whiteShade;
   ctx.stroke();
 
-  // arm
+  // Knee.
+  ctx.fillStyle = redHi;
+  ctx.beginPath();
+  ctx.moveTo(6, 29);
+  ctx.lineTo(17, 31);
+  ctx.lineTo(14, 39);
+  ctx.lineTo(4, 38);
+  ctx.closePath();
+  ctx.fill();
+
+  // Shin.
   ctx.fillStyle = frame;
   ctx.beginPath();
-  ctx.moveTo(15, -8);
-  ctx.lineTo(22, -4);
-  ctx.lineTo(18, 16);
-  ctx.lineTo(10, 15);
+  ctx.moveTo(4, 37);
+  ctx.lineTo(14, 38);
+  ctx.lineTo(13, 47);
+  ctx.lineTo(2, 47);
   ctx.closePath();
   ctx.fill();
+  ctx.strokeStyle = "#e7ddd6";
   ctx.stroke();
 
-  ctx.fillStyle = armorHi;
+  // Rear thigh white armor.
+  ctx.fillStyle = white;
   ctx.beginPath();
-  ctx.arc(16, 15, 4.5, 0, TAU);
-  ctx.fill();
-
-  // front leg with knee armor
-  ctx.fillStyle = armor;
-  ctx.beginPath();
-  ctx.moveTo(4, 16);
-  ctx.lineTo(14, 16);
-  ctx.lineTo(15, 27);
-  ctx.lineTo(11, 43);
-  ctx.lineTo(1, 43);
-  ctx.lineTo(3, 28);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = trim;
-  ctx.beginPath();
-  ctx.moveTo(8, 22);
-  ctx.lineTo(16, 27);
-  ctx.lineTo(8, 32);
-  ctx.lineTo(3, 27);
+  ctx.moveTo(-8, 14);
+  ctx.lineTo(1, 15);
+  ctx.lineTo(0, 31);
+  ctx.lineTo(-9, 34);
+  ctx.lineTo(-13, 27);
   ctx.closePath();
   ctx.fill();
 
-  // feet
-  ctx.fillStyle = frame;
+  // Feet, chunky but compact.
+  ctx.fillStyle = red;
   ctx.beginPath();
-  ctx.moveTo(-13, 40);
-  ctx.lineTo(2, 40);
-  ctx.lineTo(7, 46);
-  ctx.lineTo(-15, 46);
+  ctx.moveTo(-13, 42);
+  ctx.lineTo(1, 42);
+  ctx.lineTo(6, 48);
+  ctx.lineTo(-16, 48);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(0, 41);
-  ctx.lineTo(13, 41);
-  ctx.lineTo(22, 46);
-  ctx.lineTo(-1, 46);
+  ctx.moveTo(1, 43);
+  ctx.lineTo(14, 43);
+  ctx.lineTo(22, 48);
+  ctx.lineTo(-1, 48);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // twin shoulder cannons, long and thin
+  // Twin long shoulder cannons: dominant silhouette from option 3.
   ctx.save();
-  ctx.translate(-1, -24);
+  ctx.translate(-2, -27);
   ctx.rotate(cannonAngle || 0);
 
-  ctx.fillStyle = "#1b2128";
-  ctx.strokeStyle = trim;
+  ctx.fillStyle = frame;
+  ctx.strokeStyle = "#d9d4ce";
   ctx.beginPath();
-  roundedRectPath(-8, -6, 50, 5.5, 2);
+  roundedRectPath(-8, -9, 58, 7, 2.5);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = armor;
+  ctx.fillStyle = red;
   ctx.beginPath();
-  roundedRectPath(-5, 2, 46, 5.5, 2);
+  roundedRectPath(-6, 1, 55, 7, 2.5);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = "#0e1217";
-  ctx.fillRect(34, -4.3, 14, 2);
-  ctx.fillRect(33, 3.7, 14, 2);
+  // White cannon stripes.
+  ctx.fillStyle = white;
+  ctx.fillRect(22, -8, 8, 5);
+  ctx.fillRect(20, 2, 8, 5);
+
+  // Dark muzzles + cyan tips.
+  ctx.fillStyle = "#0c1116";
+  ctx.fillRect(42, -7.5, 12, 4);
+  ctx.fillRect(41, 2.5, 12, 4);
+  ctx.fillStyle = cyan;
+  ctx.fillRect(51, -6.7, 2, 2.5);
+  ctx.fillRect(50, 3.3, 2, 2.5);
+
   ctx.restore();
-
   ctx.restore();
 }
 
