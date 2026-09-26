@@ -1,6 +1,6 @@
 "use strict";
 
-const VERSION = "v0.3.2";
+const VERSION = "v0.4.0";
 const W = 960;
 const H = 540;
 const TAU = Math.PI * 2;
@@ -11,10 +11,10 @@ const BOMB_MAX = 3;
 const STAGES = [
   {
     number: 1,
-    targetKills: 20,
-    maxEnemies: 7,
-    spawnMin: 0.76,
-    spawnJitter: 0.82,
+    targetKills: 30,
+    maxEnemies: 14,
+    spawnMin: 0.38,
+    spawnJitter: 0.42,
     scrollSpeed: 58,
     enemyBulletSpeed: 270,
     bossHp: 90,
@@ -30,10 +30,10 @@ const STAGES = [
   },
   {
     number: 2,
-    targetKills: 28,
-    maxEnemies: 9,
-    spawnMin: 0.55,
-    spawnJitter: 0.65,
+    targetKills: 42,
+    maxEnemies: 18,
+    spawnMin: 0.26,
+    spawnJitter: 0.34,
     scrollSpeed: 72,
     enemyBulletSpeed: 320,
     bossHp: 140,
@@ -90,7 +90,7 @@ const stars = Array.from({ length: 110 }, function () {
 const player = {
   x: 160,
   y: H * 0.48,
-  radius: 21,
+  radius: 12,
   angle: 0,
   speed: 245,
   maxHp: 100,
@@ -122,7 +122,10 @@ let movePointerId = null;
 let firePointerId = null;
 let moveOrigin = null;
 let moveCurrent = null;
-let mouseMoveHeld = false;
+let mouseControlActive = false;
+let mouseTargetX = 160;
+let mouseTargetY = H * 0.48;
+let mouseAimAngle = 0;
 const joystick = { x: 0, y: 0 };
 
 function stage() {
@@ -157,7 +160,7 @@ function setGameState(next) {
     firePointerId = null;
     moveOrigin = null;
     moveCurrent = null;
-    mouseMoveHeld = false;
+    mouseControlActive = false;
     joystick.x = 0;
     joystick.y = 0;
   }
@@ -189,6 +192,9 @@ function beginStage(index, freshGame) {
   player.angle = 0;
   player.invincible = 1.0;
   player.bombs = 2;
+  mouseTargetX = player.x;
+  mouseTargetY = player.y;
+  mouseAimAngle = 0;
 
   if (freshGame) {
     player.hp = player.maxHp;
@@ -201,8 +207,8 @@ function beginStage(index, freshGame) {
   setClockUp(false);
   setGameState("playing");
 
-  for (let i = 0; i < 3; i += 1) {
-    spawnEnemy(140 + i * 190);
+  for (let i = 0; i < 5; i += 1) {
+    spawnEnemy(90 + i * 105);
   }
   updateBombButton();
 }
@@ -310,6 +316,7 @@ function updateJoystick() {
 canvas.addEventListener("pointerdown", function (e) {
   if (e.pointerType === "mouse") return;
 
+  mouseControlActive = false;
   e.preventDefault();
   const p = getCanvasPos(e);
 
@@ -400,52 +407,47 @@ canvas.addEventListener("mousedown", function (e) {
 
   if (gameState !== "playing") return;
 
-  aimX = p.x;
-  aimY = p.y;
+  mouseControlActive = true;
+  mouseTargetX = p.x;
+  mouseTargetY = p.y;
 
   if (e.button === 0) {
     fireHeld = true;
-  } else if (e.button === 2) {
-    mouseMoveHeld = true;
-    moveOrigin = p;
-    moveCurrent = p;
-    updateJoystick();
   } else if (e.button === 1) {
     useBomb();
   }
 });
 
-window.addEventListener("mousemove", function (e) {
+canvas.addEventListener("mousemove", function (e) {
   if (gameState !== "playing") return;
   const p = getCanvasPos(e);
-  aimX = p.x;
-  aimY = p.y;
-
-  if (mouseMoveHeld && (e.buttons & 2) !== 0) {
-    moveCurrent = p;
-    updateJoystick();
-  }
+  mouseControlActive = true;
+  mouseTargetX = p.x;
+  mouseTargetY = p.y;
 });
+
+canvas.addEventListener("wheel", function (e) {
+  if (gameState !== "playing") return;
+
+  e.preventDefault();
+  mouseControlActive = true;
+
+  const step = e.deltaY > 0 ? 0.085 : -0.085;
+  const maxAngle = 1.20;
+  mouseAimAngle = Math.max(-maxAngle, Math.min(maxAngle, mouseAimAngle + step));
+
+  aimX = player.x + Math.cos(mouseAimAngle) * 360;
+  aimY = player.y - 19 + Math.sin(mouseAimAngle) * 360;
+}, { passive: false });
 
 window.addEventListener("mouseup", function (e) {
   if (e.button === 0) {
     fireHeld = false;
   }
-
-  if (e.button === 2) {
-    mouseMoveHeld = false;
-    moveOrigin = null;
-    moveCurrent = null;
-    updateJoystick();
-  }
 });
 
 window.addEventListener("blur", function () {
   fireHeld = false;
-  mouseMoveHeld = false;
-  moveOrigin = null;
-  moveCurrent = null;
-  updateJoystick();
 });
 
 canvas.addEventListener("contextmenu", function (e) {
@@ -478,7 +480,7 @@ function firePlayerBullet() {
     y: shoulderY,
     vx: nx * speed,
     vy: ny * speed,
-    r: clockUp ? 5.2 : 4.4,
+    r: clockUp ? 3.4 : 2.8,
     trailClock: 0,
     damage: 1
   });
@@ -526,7 +528,7 @@ function spawnEnemy(extraX) {
       x: W + 55 + extraX,
       y: y,
       baseY: y,
-      r: 19,
+      r: 10,
       hp: 1,
       maxHp: 1,
       speed: 185 + Math.random() * 65 + stageIndex * 20,
@@ -540,7 +542,7 @@ function spawnEnemy(extraX) {
       x: W + 55 + extraX,
       y: y,
       baseY: y,
-      r: 25,
+      r: 13,
       hp: stageIndex === 0 ? 2 : 3,
       maxHp: stageIndex === 0 ? 2 : 3,
       speed: 58 + Math.random() * 30 + stageIndex * 10,
@@ -554,7 +556,7 @@ function spawnEnemy(extraX) {
       x: W + 55 + extraX,
       y: y,
       baseY: y,
-      r: 22,
+      r: 11,
       hp: 1,
       maxHp: 1,
       speed: 72 + Math.random() * 52 + stageIndex * 10,
@@ -579,7 +581,7 @@ function spawnBoss() {
   boss = {
     x: W + 110,
     y: 215,
-    radius: 38,
+    radius: 20,
     hp: stage().bossHp,
     maxHp: stage().bossHp,
     angle: Math.PI,
@@ -619,7 +621,7 @@ function fireEnemyBullet(x, y, targetX, targetY, speed, spread) {
     y: y,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    r: 5,
+    r: 3.4,
     trailClock: 0
   });
 }
@@ -764,13 +766,27 @@ function updatePlaying(dt) {
   }
 
   const pSpeed = player.speed * (clockUp ? 1.48 : 1);
-  player.x += mx * pSpeed * dt;
-  player.y += my * pSpeed * dt;
 
-  player.x = Math.max(56, Math.min(W * 0.56, player.x));
+  if (mouseControlActive) {
+    const follow = Math.min(1, dt * 18);
+    player.x += (mouseTargetX - player.x) * follow;
+    player.y += (mouseTargetY - player.y) * follow;
+  } else {
+    player.x += mx * pSpeed * dt;
+    player.y += my * pSpeed * dt;
+  }
+
+  player.x = Math.max(42, Math.min(W * 0.62, player.x));
   const groundY = terrainHeightAt(player.x);
-  player.y = Math.max(58, Math.min(groundY - player.radius - 10, player.y));
-  player.angle = Math.atan2(aimY - (player.y - 24), aimX - player.x);
+  player.y = Math.max(42, Math.min(groundY - player.radius - 7, player.y));
+
+  if (mouseControlActive) {
+    player.angle = mouseAimAngle;
+    aimX = player.x + Math.cos(mouseAimAngle) * 360;
+    aimY = player.y - 19 + Math.sin(mouseAimAngle) * 360;
+  } else {
+    player.angle = Math.atan2(aimY - (player.y - 19), aimX - player.x);
+  }
 
   fireCooldown -= dt;
   if (fireHeld && fireCooldown <= 0) {
@@ -1208,13 +1224,13 @@ function drawPlayerBullets() {
 
     ctx.fillStyle = clockUp ? "#fff4c4" : "#ffe58a";
     ctx.beginPath();
-    ctx.ellipse(0, 0, 8, b.r, 0, 0, TAU);
+    ctx.ellipse(0, 0, 6, b.r, 0, 0, TAU);
     ctx.fill();
 
     ctx.fillStyle = clockUp ? "rgba(255,119,38,.95)" : "rgba(255,165,58,.75)";
     ctx.beginPath();
     ctx.moveTo(-7, -b.r * 0.7);
-    ctx.lineTo(-17 - Math.random() * 8, 0);
+    ctx.lineTo(-13 - Math.random() * 6, 0);
     ctx.lineTo(-7, b.r * 0.7);
     ctx.closePath();
     ctx.fill();
@@ -1238,7 +1254,7 @@ function drawEnemyBullets() {
     ctx.fillStyle = "rgba(255,52,34,.7)";
     ctx.beginPath();
     ctx.moveTo(-7, -3);
-    ctx.lineTo(-18, 0);
+    ctx.lineTo(-13, 0);
     ctx.lineTo(-7, 3);
     ctx.closePath();
     ctx.fill();
@@ -1250,6 +1266,7 @@ function drawEnemyBullets() {
 function drawUfo(e) {
   ctx.save();
   ctx.translate(e.x, e.y);
+  ctx.scale(0.52, 0.52);
 
   ctx.fillStyle = "#293d4b";
   ctx.strokeStyle = "#9fc5db";
@@ -1278,6 +1295,7 @@ function drawUfo(e) {
 function drawJet(e) {
   ctx.save();
   ctx.translate(e.x, e.y);
+  ctx.scale(0.52, 0.52);
 
   ctx.fillStyle = "#414c57";
   ctx.strokeStyle = "#b6c7d4";
@@ -1460,7 +1478,7 @@ function drawHumanoidRobot(x, y, scale, enemyStyle, cannonAngle, facing) {
 }
 
 function drawRobotEnemy(e) {
-  drawHumanoidRobot(e.x, e.y, 0.68, true, Math.PI, -1);
+  drawHumanoidRobot(e.x, e.y, 0.36, true, Math.PI, -1);
 }
 
 function drawEnemy(e) {
@@ -1476,7 +1494,7 @@ function drawEnemy(e) {
 function drawBoss() {
   if (!boss) return;
 
-  drawHumanoidRobot(boss.x, boss.y, stageIndex === 0 ? 1.12 : 1.28, true, boss.angle, -1);
+  drawHumanoidRobot(boss.x, boss.y, stageIndex === 0 ? 0.58 : 0.66, true, boss.angle, -1);
 
   ctx.save();
   ctx.translate(boss.x, boss.y);
@@ -1489,153 +1507,206 @@ function drawBoss() {
 }
 
 function drawPlayerRobot(x, y, cannonAngle, scale) {
-  if (typeof scale !== "number") scale = 0.70;
+  if (typeof scale !== "number") scale = 0.38;
 
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
 
-  const body = "#8f3436";
-  const armor = "#c84b43";
-  const trim = "#e8d6cf";
-  const dark = "#292d33";
-  const mid = "#555f68";
-  const eye = "#8fe7ff";
+  const armor = "#b93f42";
+  const armorHi = "#e25b52";
+  const frame = "#232b35";
+  const frameHi = "#526170";
+  const trim = "#e7e0d9";
+  const sensor = "#8ff2ff";
+  const accent = "#f0b45a";
 
   ctx.strokeStyle = trim;
-  ctx.lineWidth = 1.6;
+  ctx.lineWidth = 1.7;
 
-  // rear backpack: compact and angular
-  ctx.fillStyle = dark;
+  // swept backpack and rear thruster
+  ctx.fillStyle = frame;
   ctx.beginPath();
-  ctx.moveTo(-18, -20);
-  ctx.lineTo(-7, -24);
-  ctx.lineTo(-5, 9);
-  ctx.lineTo(-18, 13);
+  ctx.moveTo(-22, -20);
+  ctx.lineTo(-8, -27);
+  ctx.lineTo(-6, 13);
+  ctx.lineTo(-23, 20);
+  ctx.lineTo(-28, 8);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // far leg
-  ctx.fillStyle = mid;
+  ctx.fillStyle = accent;
   ctx.beginPath();
-  ctx.moveTo(-7, 12);
-  ctx.lineTo(3, 13);
-  ctx.lineTo(1, 42);
-  ctx.lineTo(-10, 42);
+  ctx.moveTo(-25, 5);
+  ctx.lineTo(-39, 11);
+  ctx.lineTo(-24, 15);
+  ctx.closePath();
+  ctx.fill();
+
+  // rear leg
+  ctx.fillStyle = frameHi;
+  ctx.beginPath();
+  ctx.moveTo(-8, 13);
+  ctx.lineTo(2, 14);
+  ctx.lineTo(0, 40);
+  ctx.lineTo(-11, 42);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // slim torso
-  ctx.fillStyle = body;
+  // angular torso
+  ctx.fillStyle = armor;
   ctx.beginPath();
-  ctx.moveTo(-10, -22);
-  ctx.lineTo(10, -22);
-  ctx.lineTo(18, -12);
-  ctx.lineTo(15, 6);
-  ctx.lineTo(7, 17);
+  ctx.moveTo(-12, -23);
+  ctx.lineTo(9, -24);
+  ctx.lineTo(20, -14);
+  ctx.lineTo(17, 4);
+  ctx.lineTo(8, 16);
   ctx.lineTo(-8, 15);
-  ctx.lineTo(-15, -2);
+  ctx.lineTo(-17, 1);
+  ctx.lineTo(-16, -12);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // forward chest armor
-  ctx.fillStyle = armor;
+  // white chest wedge
+  ctx.fillStyle = trim;
   ctx.beginPath();
-  ctx.moveTo(3, -18);
-  ctx.lineTo(17, -11);
-  ctx.lineTo(13, 2);
-  ctx.lineTo(2, 1);
+  ctx.moveTo(1, -18);
+  ctx.lineTo(15, -13);
+  ctx.lineTo(11, -3);
+  ctx.lineTo(0, -5);
   ctx.closePath();
   ctx.fill();
 
-  // sharp side-view head
-  ctx.fillStyle = dark;
+  // waist
+  ctx.fillStyle = frame;
   ctx.beginPath();
-  ctx.moveTo(-3, -40);
-  ctx.lineTo(10, -40);
-  ctx.lineTo(18, -35);
-  ctx.lineTo(15, -27);
-  ctx.lineTo(-5, -27);
-  ctx.lineTo(-8, -33);
+  roundedRectPath(-8, 10, 18, 8, 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // head profile with crest
+  ctx.fillStyle = frame;
+  ctx.beginPath();
+  ctx.moveTo(-5, -41);
+  ctx.lineTo(8, -42);
+  ctx.lineTo(18, -36);
+  ctx.lineTo(15, -28);
+  ctx.lineTo(-6, -28);
+  ctx.lineTo(-10, -34);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = eye;
+  ctx.fillStyle = armorHi;
   ctx.beginPath();
-  ctx.moveTo(8, -35);
-  ctx.lineTo(17, -34);
-  ctx.lineTo(12, -31);
-  ctx.lineTo(7, -32);
+  ctx.moveTo(-3, -42);
+  ctx.lineTo(1, -52);
+  ctx.lineTo(4, -42);
   ctx.closePath();
   ctx.fill();
 
-  // shoulder / arm
-  ctx.fillStyle = armor;
+  ctx.fillStyle = sensor;
   ctx.beginPath();
-  ctx.arc(12, -14, 6.5, 0, TAU);
+  ctx.moveTo(7, -36);
+  ctx.lineTo(17, -35);
+  ctx.lineTo(13, -31);
+  ctx.lineTo(6, -32);
+  ctx.closePath();
+  ctx.fill();
+
+  // compact shoulder armor
+  ctx.fillStyle = armorHi;
+  ctx.beginPath();
+  ctx.moveTo(8, -20);
+  ctx.lineTo(20, -17);
+  ctx.lineTo(21, -9);
+  ctx.lineTo(10, -7);
+  ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = dark;
+  // arm
+  ctx.fillStyle = frame;
   ctx.beginPath();
   ctx.moveTo(15, -8);
   ctx.lineTo(22, -4);
-  ctx.lineTo(17, 17);
-  ctx.lineTo(9, 15);
+  ctx.lineTo(18, 16);
+  ctx.lineTo(10, 15);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // near leg, longer and cleaner
+  ctx.fillStyle = armorHi;
+  ctx.beginPath();
+  ctx.arc(16, 15, 4.5, 0, TAU);
+  ctx.fill();
+
+  // front leg with knee armor
   ctx.fillStyle = armor;
   ctx.beginPath();
-  ctx.moveTo(4, 15);
+  ctx.moveTo(4, 16);
   ctx.lineTo(14, 16);
-  ctx.lineTo(13, 43);
-  ctx.lineTo(2, 43);
+  ctx.lineTo(15, 27);
+  ctx.lineTo(11, 43);
+  ctx.lineTo(1, 43);
+  ctx.lineTo(3, 28);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = dark;
+  ctx.fillStyle = trim;
   ctx.beginPath();
-  ctx.moveTo(1, 41);
-  ctx.lineTo(15, 41);
-  ctx.lineTo(22, 46);
-  ctx.lineTo(1, 46);
+  ctx.moveTo(8, 22);
+  ctx.lineTo(16, 27);
+  ctx.lineTo(8, 32);
+  ctx.lineTo(3, 27);
+  ctx.closePath();
+  ctx.fill();
+
+  // feet
+  ctx.fillStyle = frame;
+  ctx.beginPath();
+  ctx.moveTo(-13, 40);
+  ctx.lineTo(2, 40);
+  ctx.lineTo(7, 46);
+  ctx.lineTo(-15, 46);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // waist accent
-  ctx.fillStyle = "#d6c0b6";
-  ctx.fillRect(-5, 10, 13, 3);
+  ctx.beginPath();
+  ctx.moveTo(0, 41);
+  ctx.lineTo(13, 41);
+  ctx.lineTo(22, 46);
+  ctx.lineTo(-1, 46);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
 
-  // twin shoulder cannons
+  // twin shoulder cannons, long and thin
   ctx.save();
-  ctx.translate(-1, -23);
+  ctx.translate(-1, -24);
   ctx.rotate(cannonAngle || 0);
 
-  ctx.fillStyle = "#22262c";
+  ctx.fillStyle = "#1b2128";
   ctx.strokeStyle = trim;
   ctx.beginPath();
-  roundedRectPath(-7, -6, 43, 6, 2.5);
+  roundedRectPath(-8, -6, 50, 5.5, 2);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = "#a63d3a";
+  ctx.fillStyle = armor;
   ctx.beginPath();
-  roundedRectPath(-4, 2, 39, 6, 2.5);
+  roundedRectPath(-5, 2, 46, 5.5, 2);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = "#111419";
-  ctx.fillRect(29, -4, 12, 2.5);
-  ctx.fillRect(28, 4, 12, 2.5);
+  ctx.fillStyle = "#0e1217";
+  ctx.fillRect(34, -4.3, 14, 2);
+  ctx.fillRect(33, 3.7, 14, 2);
   ctx.restore();
 
   ctx.restore();
@@ -1646,7 +1717,7 @@ function drawPlayer() {
   if (player.invincible > 0 && Math.floor(player.invincible * 18) % 2 === 0) return;
 
   // Side-scrolling game: the player body always faces right.
-  drawPlayerRobot(player.x, player.y, player.angle, 0.70);
+  drawPlayerRobot(player.x, player.y, player.angle, 0.38);
 
   if (clockUp) {
     ctx.save();
@@ -1760,15 +1831,15 @@ function drawTouchUi() {
     ctx.fill();
   }
 
-  if (fireHeld) {
-    ctx.strokeStyle = "rgba(255,224,120,.55)";
+  if (fireHeld || mouseControlActive) {
+    ctx.strokeStyle = mouseControlActive ? "rgba(145,232,255,.78)" : "rgba(255,224,120,.55)";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(aimX, aimY, 18, 0, TAU);
-    ctx.moveTo(aimX - 25, aimY);
-    ctx.lineTo(aimX + 25, aimY);
-    ctx.moveTo(aimX, aimY - 25);
-    ctx.lineTo(aimX, aimY + 25);
+    ctx.arc(aimX, aimY, mouseControlActive ? 14 : 18, 0, TAU);
+    ctx.moveTo(aimX - 21, aimY);
+    ctx.lineTo(aimX + 21, aimY);
+    ctx.moveTo(aimX, aimY - 21);
+    ctx.lineTo(aimX, aimY + 21);
     ctx.stroke();
   }
 }
@@ -1828,7 +1899,7 @@ function drawHud() {
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(220,235,245,.72)";
   ctx.font = "600 13px system-ui, sans-serif";
-  ctx.fillText("タッチ: 左移動/右射撃　マウス: 右ドラッグ移動/左射撃", W / 2, H - 16);
+  ctx.fillText("PC: マウス移動=自機　ホイール=照準角　左クリック=射撃", W / 2, H - 16);
   ctx.textAlign = "left";
 
   if (bannerTimer > 0) {
@@ -1866,7 +1937,7 @@ function drawTitle() {
   ctx.fillStyle = "rgba(2,7,14,.38)";
   ctx.fillRect(0, 0, W, H);
 
-  drawPlayerRobot(245, 294, -0.15, 1.02);
+  drawPlayerRobot(245, 294, -0.15, 0.92);
 
   ctx.textAlign = "center";
   ctx.fillStyle = "#dff2ff";
