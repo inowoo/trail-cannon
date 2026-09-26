@@ -5,14 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#050914" />
   <title>Trail Cannon</title>
-  <link rel="stylesheet" href="style.css?v=0.2.2" />
+  <link rel="stylesheet" href="style.css?v=0.3.0" />
 </head>
 <body>
   <main id="app">
     <canvas id="game" width="960" height="540" aria-label="Trail Cannon game"></canvas>
-    <button id="clockButton" type="button">CLOCK UP</button>
+    <div id="actionButtons">
+      <button id="clockButton" type="button">CLOCK UP</button>
+      <button id="bombButton" type="button">BOMB × 2</button>
+    </div>
     <div id="rotateHint">横向き推奨</div>
   </main>
-  <script src="game.js?v=0.2.2"></script>
+  <script src="game.js?v=0.3.0"></script>
 </body>
 </html>
