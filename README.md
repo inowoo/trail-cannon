@@ -6,7 +6,7 @@
 
 ## 現在のバージョン
 
-**Prototype v0.2.0**
+**Prototype v0.2.1**
 
 ## ゲームの流れ
 
@@ -151,3 +151,10 @@ CLOCK UP中は、
 GitHub Pages:
 
 https://inowoo.github.io/trail-cannon/
+
+
+## v0.2.1 修正
+
+- GitHub Pages更新直後に古いJavaScriptがキャッシュされ、HTMLと食い違って黒画面になる可能性があったため、CSS/JSのURLにバージョンを付けてキャッシュを更新
+- Canvas `roundRect` への依存をやめ、互換性の高い自前の角丸矩形描画へ変更
+- 実行時エラー発生時に真っ黒な画面ではなく `GAME ERROR` とエラー内容を表示するように変更
