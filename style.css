@@ -38,27 +38,44 @@ body {
   touch-action: none;
 }
 
-#clockButton {
+#actionButtons {
   display: none;
   position: absolute;
   top: max(10px, env(safe-area-inset-top));
   right: max(10px, env(safe-area-inset-right));
-  min-width: 122px;
-  height: 46px;
-  padding: 0 16px;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+#actionButtons button {
+  min-width: 126px;
+  height: 44px;
+  padding: 0 14px;
   border: 1px solid rgba(255,255,255,.45);
-  border-radius: 24px;
-  background: rgba(8,16,30,.78);
+  border-radius: 23px;
+  background: rgba(8,16,30,.80);
   color: white;
   font-weight: 800;
-  font-size: 14px;
-  letter-spacing: .08em;
+  font-size: 13px;
+  letter-spacing: .06em;
   backdrop-filter: blur(8px);
 }
 
 #clockButton.clock-up {
-  background: rgba(185,72,18,.88);
+  background: rgba(185,72,18,.90);
   box-shadow: 0 0 22px rgba(255,126,41,.55);
+}
+
+#bombButton {
+  background: rgba(24,91,125,.88) !important;
+  border-color: rgba(166,233,255,.75) !important;
+  box-shadow: 0 0 14px rgba(81,193,233,.25);
+}
+
+#bombButton:disabled {
+  opacity: .42;
+  box-shadow: none;
 }
 
 #rotateHint {
@@ -77,5 +94,10 @@ body {
 @media (orientation: portrait) and (max-width: 700px) {
   #rotateHint {
     display: block;
+  }
+
+  #actionButtons {
+    transform: scale(.90);
+    transform-origin: top right;
   }
 }
