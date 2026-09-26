@@ -1,6 +1,6 @@
 "use strict";
 
-const VERSION = "v0.3.1";
+const VERSION = "v0.3.2";
 const W = 960;
 const H = 540;
 const TAU = Math.PI * 2;
@@ -90,7 +90,7 @@ const stars = Array.from({ length: 110 }, function () {
 const player = {
   x: 160,
   y: H * 0.48,
-  radius: 25,
+  radius: 21,
   angle: 0,
   speed: 245,
   maxHp: 100,
@@ -469,8 +469,8 @@ function firePlayerBullet() {
   const ny = dy / len;
   player.angle = Math.atan2(ny, nx);
 
-  const shoulderX = player.x + nx * 24;
-  const shoulderY = player.y - 24 + ny * 24;
+  const shoulderX = player.x + nx * 22;
+  const shoulderY = player.y - 19 + ny * 18;
   const speed = clockUp ? 1040 : 710;
 
   bullets.push({
@@ -818,12 +818,12 @@ function updatePlayerBullets(dt) {
       trailDots.push({
         x: b.x,
         y: b.y,
-        life: clockUp ? 0.82 : 0.66,
-        maxLife: clockUp ? 0.82 : 0.66,
-        size: clockUp ? 3.2 : 2.7,
+        life: clockUp ? 1.20 : 1.00,
+        maxLife: clockUp ? 1.20 : 1.00,
+        size: clockUp ? 2.9 : 2.5,
         color: "player"
       });
-      b.trailClock = clockUp ? 0.022 : 0.032;
+      b.trailClock = clockUp ? 0.011 : 0.017;
     }
 
     b.x += b.vx * dt;
@@ -928,8 +928,8 @@ function updateTrails(dt) {
     if (trailDots[i].life <= 0) trailDots.splice(i, 1);
   }
 
-  if (trailDots.length > 3400) {
-    trailDots.splice(0, trailDots.length - 3400);
+  if (trailDots.length > 5200) {
+    trailDots.splice(0, trailDots.length - 5200);
   }
 }
 
@@ -1488,29 +1488,185 @@ function drawBoss() {
   ctx.restore();
 }
 
+function drawPlayerRobot(x, y, cannonAngle, scale) {
+  if (typeof scale !== "number") scale = 0.70;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+
+  const body = "#8f3436";
+  const armor = "#c84b43";
+  const trim = "#e8d6cf";
+  const dark = "#292d33";
+  const mid = "#555f68";
+  const eye = "#8fe7ff";
+
+  ctx.strokeStyle = trim;
+  ctx.lineWidth = 1.6;
+
+  // rear backpack: compact and angular
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.moveTo(-18, -20);
+  ctx.lineTo(-7, -24);
+  ctx.lineTo(-5, 9);
+  ctx.lineTo(-18, 13);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // far leg
+  ctx.fillStyle = mid;
+  ctx.beginPath();
+  ctx.moveTo(-7, 12);
+  ctx.lineTo(3, 13);
+  ctx.lineTo(1, 42);
+  ctx.lineTo(-10, 42);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // slim torso
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(-10, -22);
+  ctx.lineTo(10, -22);
+  ctx.lineTo(18, -12);
+  ctx.lineTo(15, 6);
+  ctx.lineTo(7, 17);
+  ctx.lineTo(-8, 15);
+  ctx.lineTo(-15, -2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // forward chest armor
+  ctx.fillStyle = armor;
+  ctx.beginPath();
+  ctx.moveTo(3, -18);
+  ctx.lineTo(17, -11);
+  ctx.lineTo(13, 2);
+  ctx.lineTo(2, 1);
+  ctx.closePath();
+  ctx.fill();
+
+  // sharp side-view head
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.moveTo(-3, -40);
+  ctx.lineTo(10, -40);
+  ctx.lineTo(18, -35);
+  ctx.lineTo(15, -27);
+  ctx.lineTo(-5, -27);
+  ctx.lineTo(-8, -33);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = eye;
+  ctx.beginPath();
+  ctx.moveTo(8, -35);
+  ctx.lineTo(17, -34);
+  ctx.lineTo(12, -31);
+  ctx.lineTo(7, -32);
+  ctx.closePath();
+  ctx.fill();
+
+  // shoulder / arm
+  ctx.fillStyle = armor;
+  ctx.beginPath();
+  ctx.arc(12, -14, 6.5, 0, TAU);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.moveTo(15, -8);
+  ctx.lineTo(22, -4);
+  ctx.lineTo(17, 17);
+  ctx.lineTo(9, 15);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // near leg, longer and cleaner
+  ctx.fillStyle = armor;
+  ctx.beginPath();
+  ctx.moveTo(4, 15);
+  ctx.lineTo(14, 16);
+  ctx.lineTo(13, 43);
+  ctx.lineTo(2, 43);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.moveTo(1, 41);
+  ctx.lineTo(15, 41);
+  ctx.lineTo(22, 46);
+  ctx.lineTo(1, 46);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // waist accent
+  ctx.fillStyle = "#d6c0b6";
+  ctx.fillRect(-5, 10, 13, 3);
+
+  // twin shoulder cannons
+  ctx.save();
+  ctx.translate(-1, -23);
+  ctx.rotate(cannonAngle || 0);
+
+  ctx.fillStyle = "#22262c";
+  ctx.strokeStyle = trim;
+  ctx.beginPath();
+  roundedRectPath(-7, -6, 43, 6, 2.5);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#a63d3a";
+  ctx.beginPath();
+  roundedRectPath(-4, 2, 39, 6, 2.5);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#111419";
+  ctx.fillRect(29, -4, 12, 2.5);
+  ctx.fillRect(28, 4, 12, 2.5);
+  ctx.restore();
+
+  ctx.restore();
+}
+
 function drawPlayer() {
   if (gameState === "title") return;
   if (player.invincible > 0 && Math.floor(player.invincible * 18) % 2 === 0) return;
 
-  drawHumanoidRobot(player.x, player.y, 0.82, false, player.angle, aimX >= player.x ? 1 : -1);
+  // Side-scrolling game: the player body always faces right.
+  drawPlayerRobot(player.x, player.y, player.angle, 0.70);
 
   if (clockUp) {
     ctx.save();
     ctx.translate(player.x, player.y);
-    ctx.fillStyle = "rgba(255,105,28,.28)";
+    ctx.fillStyle = "rgba(255,105,28,.30)";
+
     ctx.beginPath();
-    ctx.moveTo(-21, 18);
-    ctx.lineTo(-48 - Math.random() * 22, 31);
-    ctx.lineTo(-14, 29);
+    ctx.moveTo(-14, 13);
+    ctx.lineTo(-43 - Math.random() * 20, 24);
+    ctx.lineTo(-11, 23);
     ctx.closePath();
     ctx.fill();
 
     ctx.beginPath();
-    ctx.moveTo(-7, 18);
-    ctx.lineTo(-30 - Math.random() * 20, 36);
-    ctx.lineTo(2, 29);
+    ctx.moveTo(-4, 15);
+    ctx.lineTo(-30 - Math.random() * 18, 30);
+    ctx.lineTo(3, 24);
     ctx.closePath();
     ctx.fill();
+
     ctx.restore();
   }
 }
@@ -1710,7 +1866,7 @@ function drawTitle() {
   ctx.fillStyle = "rgba(2,7,14,.38)";
   ctx.fillRect(0, 0, W, H);
 
-  drawHumanoidRobot(245, 294, 1.25, false, -0.15, 1);
+  drawPlayerRobot(245, 294, -0.15, 1.02);
 
   ctx.textAlign = "center";
   ctx.fillStyle = "#dff2ff";
