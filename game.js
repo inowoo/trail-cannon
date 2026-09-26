@@ -1,6 +1,6 @@
 "use strict";
 
-const VERSION = "v0.2.0";
+const VERSION = "v0.2.1";
 const W = 960;
 const H = 540;
 const TAU = Math.PI * 2;
@@ -920,7 +920,7 @@ function drawBoss() {
   ctx.lineWidth = 3;
 
   ctx.beginPath();
-  ctx.roundRect(-30, -25, 58, 50, 9);
+  roundedRectPath(-30, -25, 58, 50, 9);
   ctx.fill();
   ctx.stroke();
 
@@ -935,7 +935,7 @@ function drawBoss() {
 
   ctx.fillStyle = "#53323a";
   ctx.beginPath();
-  ctx.roundRect(-40, -37, 52, 12, 5);
+  roundedRectPath(-40, -37, 52, 12, 5);
   ctx.fill();
   ctx.stroke();
 
@@ -961,7 +961,7 @@ function drawPlayer() {
   ctx.lineWidth = 2.4;
 
   ctx.beginPath();
-  ctx.roundRect(-23, -19, 45, 38, 8);
+  roundedRectPath(-23, -19, 45, 38, 8);
   ctx.fill();
   ctx.stroke();
 
@@ -977,7 +977,7 @@ function drawPlayer() {
   ctx.fillStyle = "#2f4659";
   ctx.strokeStyle = "#d7eaf7";
   ctx.beginPath();
-  ctx.roundRect(-5, -31, 42, 10, 5);
+  roundedRectPath(-5, -31, 42, 10, 5);
   ctx.fill();
   ctx.stroke();
 
@@ -1015,7 +1015,7 @@ function drawItems() {
     ctx.strokeStyle = "#c7ffe4";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.roundRect(-15, -15, 30, 30, 7);
+    roundedRectPath(-15, -15, 30, 30, 7);
     ctx.fill();
     ctx.stroke();
 
@@ -1146,7 +1146,7 @@ function drawButton(rect, label, primary = true) {
   ctx.strokeStyle = primary ? "#c3e9ff" : "rgba(220,235,245,.5)";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.roundRect(rect.x, rect.y, rect.w, rect.h, 14);
+  roundedRectPath(rect.x, rect.y, rect.w, rect.h, 14);
   ctx.fill();
   ctx.stroke();
 
@@ -1231,15 +1231,49 @@ function render() {
   if (gameState === "clear") drawEndScreen(true);
 }
 
+let fatalError = null;
+
+function drawFatalError(error) {
+  ctx.fillStyle = "#160608";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#ff9c91";
+  ctx.textAlign = "center";
+  ctx.font = "800 28px system-ui, sans-serif";
+  ctx.fillText("GAME ERROR", W / 2, 205);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "600 16px system-ui, sans-serif";
+  const message = String(error && error.message ? error.message : error).slice(0, 90);
+  ctx.fillText(message, W / 2, 248);
+  ctx.fillStyle = "#9fb4c4";
+  ctx.font = "600 14px ui-monospace, monospace";
+  ctx.fillText(VERSION, W / 2, 282);
+  ctx.textAlign = "left";
+}
+
 function loop(now) {
   let dt = (now - lastTime) / 1000;
   lastTime = now;
   dt = Math.min(dt, 1 / 30);
 
-  update(dt);
-  render();
+  if (!fatalError) {
+    try {
+      update(dt);
+      render();
+    } catch (error) {
+      fatalError = error;
+      console.error("Trail Cannon fatal error:", error);
+      drawFatalError(error);
+    }
+  } else {
+    drawFatalError(fatalError);
+  }
+
   requestAnimationFrame(loop);
 }
+
+window.addEventListener("error", (event) => {
+  if (!fatalError) fatalError = event.error || new Error(event.message || "Unknown error");
+});
 
 setGameState("title");
 requestAnimationFrame(loop);
