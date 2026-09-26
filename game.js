@@ -648,6 +648,7 @@ function useBomb() {
       if (e.hp <= 0) {
         enemies.splice(i, 1);
         onRegularEnemyDestroyed(e);
+        if (bossSpawned) break;
       } else {
         explode(e.x, e.y, 8, "cyan");
       }
