@@ -1,11 +1,25 @@
 "use strict";
 
-const VERSION = "v0.2.1";
+const VERSION = "v0.2.2";
 const W = 960;
 const H = 540;
 const TAU = Math.PI * 2;
 const REGULAR_KILLS_TO_BOSS = 20;
 const HEAL_EVERY_KILLS = 6;
+
+function roundedRectPath(x, y, w, h, r) {
+  const rr = Math.max(0, Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2));
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
