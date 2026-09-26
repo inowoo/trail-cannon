@@ -1,12 +1,16 @@
 "use strict";
 
-const VERSION = "v0.4.0";
+const VERSION = "v0.5.0";
 const W = 960;
 const H = 540;
 const TAU = Math.PI * 2;
 const HEAL_EVERY_KILLS = 6;
 const BOMB_RADIUS = 230;
 const BOMB_MAX = 3;
+const CLOCK_MAX = 100;
+const CLOCK_DRAIN_PER_SEC = 28;
+const CLOCK_RECHARGE_PER_SEC = 16;
+const CLOCK_MIN_ACTIVATE = 25;
 
 const STAGES = [
   {
@@ -103,6 +107,7 @@ let gameState = "title";
 let stageIndex = 0;
 let stageKills = 0;
 let clockUp = false;
+let clockCharge = CLOCK_MAX;
 let score = 0;
 let fireHeld = false;
 let fireCooldown = 0;
@@ -132,15 +137,44 @@ function stage() {
   return STAGES[Math.min(stageIndex, STAGES.length - 1)];
 }
 
-function setClockUp(value) {
-  clockUp = value;
-  clockButton.textContent = clockUp ? "CLOCK UP ON" : "CLOCK UP";
+function updateClockButton() {
+  const pct = Math.max(0, Math.min(100, Math.round(clockCharge)));
+  clockButton.textContent = clockUp ? "CLOCK UP " + pct + "%" : "CLOCK " + pct + "%";
   clockButton.classList.toggle("clock-up", clockUp);
+  clockButton.disabled = gameState !== "playing" || (!clockUp && clockCharge < CLOCK_MIN_ACTIVATE);
+}
+
+function setClockUp(value) {
+  if (value && clockCharge < CLOCK_MIN_ACTIVATE) return;
+  clockUp = value;
+  updateClockButton();
 }
 
 function toggleClockUp() {
   if (gameState !== "playing") return;
-  setClockUp(!clockUp);
+  if (clockUp) {
+    setClockUp(false);
+  } else if (clockCharge >= CLOCK_MIN_ACTIVATE) {
+    setClockUp(true);
+  }
+}
+
+function updateClockCharge(dt) {
+  if (gameState !== "playing") return;
+
+  if (clockUp) {
+    clockCharge = Math.max(0, clockCharge - CLOCK_DRAIN_PER_SEC * dt);
+    if (clockCharge <= 0) {
+      clockCharge = 0;
+      setClockUp(false);
+      bannerText = "CLOCK DOWN";
+      bannerTimer = 0.8;
+    }
+  } else {
+    clockCharge = Math.min(CLOCK_MAX, clockCharge + CLOCK_RECHARGE_PER_SEC * dt);
+  }
+
+  updateClockButton();
 }
 
 function updateBombButton() {
@@ -153,6 +187,7 @@ function setGameState(next) {
   const playing = next === "playing";
   actionButtons.style.display = playing ? "flex" : "none";
   updateBombButton();
+  updateClockButton();
 
   if (!playing) {
     fireHeld = false;
@@ -192,6 +227,7 @@ function beginStage(index, freshGame) {
   player.angle = 0;
   player.invincible = 1.0;
   player.bombs = 2;
+  clockCharge = CLOCK_MAX;
   mouseTargetX = player.x;
   mouseTargetY = player.y;
   mouseAimAngle = 0;
@@ -415,6 +451,8 @@ canvas.addEventListener("mousedown", function (e) {
     fireHeld = true;
   } else if (e.button === 1) {
     useBomb();
+  } else if (e.button === 2) {
+    toggleClockUp();
   }
 });
 
@@ -743,6 +781,7 @@ function finishBoss() {
 }
 
 function updatePlaying(dt) {
+  updateClockCharge(dt);
   const timeScale = clockUp ? 1.18 : 1;
   const worldDt = dt * timeScale;
   worldOffset += (clockUp ? stage().scrollSpeed * 1.45 : stage().scrollSpeed) * dt;
@@ -1207,7 +1246,7 @@ function drawTrailDots() {
 
     ctx.fillStyle = t.color === "enemy"
       ? "rgba(255,92,72," + (0.18 + a * 0.78) + ")"
-      : "rgba(248,214,112," + (0.15 + a * 0.82) + ")";
+      : "rgba(242,249,255," + (0.22 + a * 0.78) + ")";
 
     ctx.beginPath();
     ctx.arc(t.x, t.y, t.size * (0.65 + a * 0.45), 0, TAU);
@@ -1859,7 +1898,7 @@ function drawHud() {
   if (gameState !== "playing") return;
 
   ctx.fillStyle = "rgba(5,10,18,.68)";
-  ctx.fillRect(14, 14, 252, 105);
+  ctx.fillRect(14, 14, 252, 132);
 
   ctx.fillStyle = "#dbe9f4";
   ctx.font = "700 18px system-ui, sans-serif";
@@ -1870,14 +1909,18 @@ function drawHud() {
   ctx.fillText("STAGE " + (stageIndex + 1), 27, 59);
 
   ctx.fillStyle = clockUp ? "#ffb067" : "#8fc8e8";
-  ctx.fillText(clockUp ? "CLOCK UP" : "CLOCK NORMAL", 100, 59);
+  ctx.fillText(clockUp ? "CLOCK UP" : "CLOCK READY", 100, 59);
 
   ctx.fillStyle = "#eef5fa";
-  ctx.fillText("HP", 27, 85);
-  drawHpBar(54, 73, 190, 14, player.hp, player.maxHp, player.hp > 30 ? "#48d689" : "#ff604f");
+  ctx.fillText("HP", 27, 84);
+  drawHpBar(54, 72, 190, 14, player.hp, player.maxHp, player.hp > 30 ? "#48d689" : "#ff604f");
+
+  ctx.fillStyle = "#eef5fa";
+  ctx.fillText("CLK", 27, 106);
+  drawHpBar(54, 94, 190, 12, clockCharge, CLOCK_MAX, clockUp ? "#ffae63" : "#86cfee");
 
   ctx.fillStyle = "#9fe8ff";
-  ctx.fillText("BOMB × " + player.bombs, 27, 108);
+  ctx.fillText("BOMB × " + player.bombs, 27, 130);
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 18px ui-monospace, SFMono-Regular, Menlo, monospace";
@@ -1899,7 +1942,7 @@ function drawHud() {
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(220,235,245,.72)";
   ctx.font = "600 13px system-ui, sans-serif";
-  ctx.fillText("PC: マウス移動=自機　ホイール=照準角　左クリック=射撃", W / 2, H - 16);
+  ctx.fillText("PC: マウス=移動　ホイール=照準　左=射撃　右=CLOCK UP", W / 2, H - 16);
   ctx.textAlign = "left";
 
   if (bannerTimer > 0) {
@@ -2078,5 +2121,6 @@ window.addEventListener("error", function (event) {
 });
 
 setGameState("title");
+clockCharge = CLOCK_MAX;
 setClockUp(false);
 requestAnimationFrame(loop);
