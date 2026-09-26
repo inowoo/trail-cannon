@@ -1,6 +1,6 @@
 "use strict";
 
-const VERSION = "v0.3.0";
+const VERSION = "v0.3.1";
 const W = 960;
 const H = 540;
 const TAU = Math.PI * 2;
@@ -122,6 +122,7 @@ let movePointerId = null;
 let firePointerId = null;
 let moveOrigin = null;
 let moveCurrent = null;
+let mouseMoveHeld = false;
 const joystick = { x: 0, y: 0 };
 
 function stage() {
@@ -156,6 +157,7 @@ function setGameState(next) {
     firePointerId = null;
     moveOrigin = null;
     moveCurrent = null;
+    mouseMoveHeld = false;
     joystick.x = 0;
     joystick.y = 0;
   }
@@ -306,6 +308,8 @@ function updateJoystick() {
 }
 
 canvas.addEventListener("pointerdown", function (e) {
+  if (e.pointerType === "mouse") return;
+
   e.preventDefault();
   const p = getCanvasPos(e);
 
@@ -326,15 +330,6 @@ canvas.addEventListener("pointerdown", function (e) {
 
   if (gameState !== "playing") return;
 
-  if (e.pointerType === "mouse") {
-    aimX = p.x;
-    aimY = p.y;
-    fireHeld = true;
-    firePointerId = e.pointerId;
-    canvas.setPointerCapture(e.pointerId);
-    return;
-  }
-
   if (p.x < W * 0.46 && movePointerId === null) {
     movePointerId = e.pointerId;
     moveOrigin = p;
@@ -351,13 +346,8 @@ canvas.addEventListener("pointerdown", function (e) {
 });
 
 canvas.addEventListener("pointermove", function (e) {
-  if (gameState !== "playing") return;
+  if (e.pointerType === "mouse" || gameState !== "playing") return;
   const p = getCanvasPos(e);
-
-  if (e.pointerType === "mouse") {
-    aimX = p.x;
-    aimY = p.y;
-  }
 
   if (e.pointerId === movePointerId) {
     moveCurrent = p;
@@ -371,6 +361,8 @@ canvas.addEventListener("pointermove", function (e) {
 });
 
 function releasePointer(e) {
+  if (e.pointerType === "mouse") return;
+
   if (e.pointerId === movePointerId) {
     movePointerId = null;
     moveOrigin = null;
@@ -386,6 +378,76 @@ function releasePointer(e) {
 
 canvas.addEventListener("pointerup", releasePointer);
 canvas.addEventListener("pointercancel", releasePointer);
+
+canvas.addEventListener("mousedown", function (e) {
+  e.preventDefault();
+  const p = getCanvasPos(e);
+
+  if (gameState === "title") {
+    if (e.button === 0 && pointInRect(p, startButtonRect())) resetGame();
+    return;
+  }
+
+  if (gameState === "gameover" || gameState === "complete") {
+    if (e.button === 0 && pointInRect(p, retryButtonRect())) {
+      resetGame();
+    } else if (e.button === 0 && pointInRect(p, titleButtonRect())) {
+      setGameState("title");
+      setClockUp(false);
+    }
+    return;
+  }
+
+  if (gameState !== "playing") return;
+
+  aimX = p.x;
+  aimY = p.y;
+
+  if (e.button === 0) {
+    fireHeld = true;
+  } else if (e.button === 2) {
+    mouseMoveHeld = true;
+    moveOrigin = p;
+    moveCurrent = p;
+    updateJoystick();
+  } else if (e.button === 1) {
+    useBomb();
+  }
+});
+
+window.addEventListener("mousemove", function (e) {
+  if (gameState !== "playing") return;
+  const p = getCanvasPos(e);
+  aimX = p.x;
+  aimY = p.y;
+
+  if (mouseMoveHeld && (e.buttons & 2) !== 0) {
+    moveCurrent = p;
+    updateJoystick();
+  }
+});
+
+window.addEventListener("mouseup", function (e) {
+  if (e.button === 0) {
+    fireHeld = false;
+  }
+
+  if (e.button === 2) {
+    mouseMoveHeld = false;
+    moveOrigin = null;
+    moveCurrent = null;
+    updateJoystick();
+  }
+});
+
+window.addEventListener("blur", function () {
+  fireHeld = false;
+  mouseMoveHeld = false;
+  moveOrigin = null;
+  moveCurrent = null;
+  updateJoystick();
+});
+
 canvas.addEventListener("contextmenu", function (e) {
   e.preventDefault();
 });
@@ -1249,90 +1311,156 @@ function drawJet(e) {
   ctx.restore();
 }
 
-function drawHumanoidRobot(x, y, scale, enemyStyle, cannonAngle) {
+function drawHumanoidRobot(x, y, scale, enemyStyle, cannonAngle, facing) {
+  if (typeof facing !== "number") facing = 1;
+
   ctx.save();
   ctx.translate(x, y);
-  ctx.scale(scale, scale);
+  ctx.scale(scale * facing, scale);
 
-  const body = enemyStyle ? "#55343a" : "#8f3435";
-  const armor = enemyStyle ? "#73444b" : "#b8433e";
-  const edge = enemyStyle ? "#ff9c91" : "#f2d8cf";
-  const dark = enemyStyle ? "#2c2229" : "#3a3438";
+  const body = enemyStyle ? "#55343a" : "#963738";
+  const armor = enemyStyle ? "#73444b" : "#c64b43";
+  const edge = enemyStyle ? "#ff9c91" : "#f3ddd3";
+  const dark = enemyStyle ? "#2c2229" : "#37363b";
+  const joint = enemyStyle ? "#9c5b61" : "#6b7379";
   const eye = enemyStyle ? "#ff705f" : "#8fe7ff";
 
   ctx.strokeStyle = edge;
-  ctx.lineWidth = 1.8;
+  ctx.lineWidth = 1.7;
 
+  // backpack / rear silhouette
   ctx.fillStyle = dark;
   ctx.beginPath();
-  roundedRectPath(-10, -38, 20, 13, 3);
+  roundedRectPath(-23, -20, 12, 32, 4);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = eye;
-  ctx.fillRect(1, -34, 6, 2);
+  // far leg
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.moveTo(-8, 13);
+  ctx.lineTo(4, 15);
+  ctx.lineTo(0, 42);
+  ctx.lineTo(-14, 42);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillRect(-16, 40, 19, 6);
 
+  // torso in side profile
   ctx.fillStyle = body;
   ctx.beginPath();
-  ctx.moveTo(-18, -23);
-  ctx.lineTo(17, -23);
-  ctx.lineTo(22, 7);
-  ctx.lineTo(10, 18);
-  ctx.lineTo(-11, 18);
-  ctx.lineTo(-22, 7);
+  ctx.moveTo(-15, -22);
+  ctx.lineTo(12, -22);
+  ctx.lineTo(23, -10);
+  ctx.lineTo(18, 10);
+  ctx.lineTo(7, 20);
+  ctx.lineTo(-12, 15);
+  ctx.lineTo(-20, -4);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
+  // chest plate
   ctx.fillStyle = armor;
   ctx.beginPath();
-  ctx.arc(-22, -15, 8, 0, TAU);
-  ctx.arc(22, -15, 8, 0, TAU);
+  ctx.moveTo(4, -17);
+  ctx.lineTo(19, -10);
+  ctx.lineTo(15, 4);
+  ctx.lineTo(3, 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // profile head, looking to local +X
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.moveTo(-5, -40);
+  ctx.lineTo(10, -40);
+  ctx.lineTo(18, -34);
+  ctx.lineTo(14, -26);
+  ctx.lineTo(-7, -26);
+  ctx.lineTo(-10, -33);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = eye;
+  ctx.fillRect(8, -34, 8, 3);
+  ctx.fillStyle = armor;
+  ctx.fillRect(-7, -38, 5, 9);
+
+  // shoulder and near arm
+  ctx.fillStyle = armor;
+  ctx.beginPath();
+  ctx.arc(13, -15, 8, 0, TAU);
   ctx.fill();
   ctx.stroke();
 
   ctx.fillStyle = dark;
   ctx.beginPath();
-  roundedRectPath(-26, -8, 9, 28, 3);
-  ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  roundedRectPath(17, -8, 9, 28, 3);
+  ctx.moveTo(16, -8);
+  ctx.lineTo(24, -4);
+  ctx.lineTo(19, 19);
+  ctx.lineTo(9, 16);
+  ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
+  ctx.fillStyle = joint;
+  ctx.beginPath();
+  ctx.arc(17, 16, 5, 0, TAU);
+  ctx.fill();
+
+  // near leg
   ctx.fillStyle = armor;
   ctx.beginPath();
-  roundedRectPath(-17, 17, 13, 28, 4);
-  ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  roundedRectPath(4, 17, 13, 28, 4);
+  ctx.moveTo(5, 16);
+  ctx.lineTo(17, 17);
+  ctx.lineTo(15, 43);
+  ctx.lineTo(2, 43);
+  ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
   ctx.fillStyle = dark;
-  ctx.fillRect(-20, 42, 17, 6);
-  ctx.fillRect(3, 42, 17, 6);
+  ctx.beginPath();
+  ctx.moveTo(1, 41);
+  ctx.lineTo(17, 41);
+  ctx.lineTo(23, 47);
+  ctx.lineTo(1, 47);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
 
+  // twin shoulder cannon, seen from the side
+  const localCannonAngle = facing > 0 ? cannonAngle : Math.PI - cannonAngle;
   ctx.save();
-  ctx.translate(0, -22);
-  ctx.rotate(cannonAngle || 0);
-  ctx.fillStyle = dark;
+  ctx.translate(-1, -23);
+  ctx.rotate(localCannonAngle || 0);
+
+  ctx.fillStyle = "#272b31";
   ctx.strokeStyle = edge;
   ctx.beginPath();
-  roundedRectPath(-5, -5, 39, 9, 3);
+  roundedRectPath(-9, -7, 45, 7, 3);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = armor;
-  ctx.fillRect(25, -3, 13, 5);
+
+  ctx.fillStyle = enemyStyle ? "#6e3a40" : "#a63d3a";
+  ctx.beginPath();
+  roundedRectPath(-6, 2, 40, 7, 3);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#181b20";
+  ctx.fillRect(29, -5, 13, 3);
+  ctx.fillRect(27, 4, 13, 3);
   ctx.restore();
 
   ctx.restore();
 }
 
 function drawRobotEnemy(e) {
-  drawHumanoidRobot(e.x, e.y, 0.68, true, Math.PI);
+  drawHumanoidRobot(e.x, e.y, 0.68, true, Math.PI, -1);
 }
 
 function drawEnemy(e) {
@@ -1348,7 +1476,7 @@ function drawEnemy(e) {
 function drawBoss() {
   if (!boss) return;
 
-  drawHumanoidRobot(boss.x, boss.y, stageIndex === 0 ? 1.12 : 1.28, true, boss.angle);
+  drawHumanoidRobot(boss.x, boss.y, stageIndex === 0 ? 1.12 : 1.28, true, boss.angle, -1);
 
   ctx.save();
   ctx.translate(boss.x, boss.y);
@@ -1364,7 +1492,7 @@ function drawPlayer() {
   if (gameState === "title") return;
   if (player.invincible > 0 && Math.floor(player.invincible * 18) % 2 === 0) return;
 
-  drawHumanoidRobot(player.x, player.y, 0.82, false, player.angle);
+  drawHumanoidRobot(player.x, player.y, 0.82, false, player.angle, aimX >= player.x ? 1 : -1);
 
   if (clockUp) {
     ctx.save();
@@ -1544,7 +1672,7 @@ function drawHud() {
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(220,235,245,.72)";
   ctx.font = "600 13px system-ui, sans-serif";
-  ctx.fillText("左: 移動　右: 照準＋連射　BOMB: 敵弾消去", W / 2, H - 16);
+  ctx.fillText("タッチ: 左移動/右射撃　マウス: 右ドラッグ移動/左射撃", W / 2, H - 16);
   ctx.textAlign = "left";
 
   if (bannerTimer > 0) {
@@ -1582,7 +1710,7 @@ function drawTitle() {
   ctx.fillStyle = "rgba(2,7,14,.38)";
   ctx.fillRect(0, 0, W, H);
 
-  drawHumanoidRobot(245, 294, 1.25, false, -0.15);
+  drawHumanoidRobot(245, 294, 1.25, false, -0.15, 1);
 
   ctx.textAlign = "center";
   ctx.fillStyle = "#dff2ff";
