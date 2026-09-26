@@ -38,11 +38,12 @@ body {
   touch-action: none;
 }
 
-#turboButton {
+#clockButton {
+  display: none;
   position: absolute;
   top: max(10px, env(safe-area-inset-top));
   right: max(10px, env(safe-area-inset-right));
-  min-width: 106px;
+  min-width: 122px;
   height: 46px;
   padding: 0 16px;
   border: 1px solid rgba(255,255,255,.45);
@@ -50,12 +51,12 @@ body {
   background: rgba(8,16,30,.78);
   color: white;
   font-weight: 800;
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: .08em;
   backdrop-filter: blur(8px);
 }
 
-#turboButton.turbo {
+#clockButton.clock-up {
   background: rgba(185,72,18,.88);
   box-shadow: 0 0 22px rgba(255,126,41,.55);
 }
