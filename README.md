@@ -6,7 +6,7 @@
 
 ## 現在のバージョン
 
-**Prototype v0.5.1**
+**Prototype v0.6.0**
 
 ## ゲームの流れ
 
@@ -315,3 +315,17 @@ https://inowoo.github.io/trail-cannon/
   - 大型の2連肩キャノン
   - 背部の角形バックパック
 - タイトル画面のプレイヤー機も同じデザインへ統一
+
+
+## v0.6.0 変更
+
+- プレイヤー、UFO、ジェット、敵ロボ、ボスの実描画をPNGスプライトへ変更
+- 各スプライトを `assets/sprites/` に追加
+  - `player.png`
+  - `ufo.png`
+  - `jet.png`
+  - `enemy-robot.png`
+  - `boss.png`
+- 既存のステージ進行、当たり判定、敵種別、HP、BOMB、CLOCK UP、弾の軌跡仕様は維持
+- スプライト描画時に、キャラごとの揺れ・傾き・発光・CLOCK UP時のブースト表現を追加
+- GitHub Pagesのキャッシュ混在を避けるため、HTMLから読み込むCSS/JSのバージョンを `v0.6.0` へ更新

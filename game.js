@@ -1,6 +1,6 @@
 "use strict";
 
-const VERSION = "v0.5.1";
+const VERSION = "v0.6.0";
 const W = 960;
 const H = 540;
 const TAU = Math.PI * 2;
@@ -11,6 +11,49 @@ const CLOCK_MAX = 100;
 const CLOCK_DRAIN_PER_SEC = 28;
 const CLOCK_RECHARGE_PER_SEC = 16;
 const CLOCK_MIN_ACTIVATE = 25;
+const SPRITE_VERSION = "v0.6.0";
+
+const SPRITE_SPECS = {
+  player: {
+    src: "assets/sprites/player.png",
+    anchorX: 0.50,
+    anchorY: 0.72
+  },
+  ufo: {
+    src: "assets/sprites/ufo.png",
+    anchorX: 0.50,
+    anchorY: 0.56
+  },
+  jet: {
+    src: "assets/sprites/jet.png",
+    anchorX: 0.50,
+    anchorY: 0.50
+  },
+  robot: {
+    src: "assets/sprites/enemy-robot.png",
+    anchorX: 0.50,
+    anchorY: 0.72
+  },
+  boss: {
+    src: "assets/sprites/boss.png",
+    anchorX: 0.50,
+    anchorY: 0.72
+  }
+};
+
+const sprites = {};
+
+Object.keys(SPRITE_SPECS).forEach(function (key) {
+  const spec = SPRITE_SPECS[key];
+  const img = new Image();
+  img.decoding = "async";
+  img.src = spec.src + "?v=" + SPRITE_VERSION;
+  sprites[key] = {
+    img: img,
+    anchorX: spec.anchorX,
+    anchorY: spec.anchorY
+  };
+});
 
 const STAGES = [
   {
@@ -1302,222 +1345,68 @@ function drawEnemyBullets() {
   }
 }
 
-function drawUfo(e) {
-  ctx.save();
-  ctx.translate(e.x, e.y);
-  ctx.scale(0.52, 0.52);
-
-  ctx.fillStyle = "#293d4b";
-  ctx.strokeStyle = "#9fc5db";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.ellipse(0, 5, 25, 9, 0, 0, TAU);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = "#52788c";
-  ctx.beginPath();
-  ctx.ellipse(0, -2, 12, 8, 0, Math.PI, TAU);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = "#ff765e";
-  ctx.beginPath();
-  ctx.arc(-13, 7, 2.5, 0, TAU);
-  ctx.arc(0, 8, 2.5, 0, TAU);
-  ctx.arc(13, 7, 2.5, 0, TAU);
-  ctx.fill();
-
-  ctx.restore();
+function spriteReady(sprite) {
+  return sprite && sprite.img.complete && sprite.img.naturalWidth > 0;
 }
 
-function drawJet(e) {
-  ctx.save();
-  ctx.translate(e.x, e.y);
-  ctx.scale(0.52, 0.52);
+function drawSprite(key, x, y, height, options) {
+  const sprite = sprites[key];
+  if (!spriteReady(sprite)) return false;
 
-  ctx.fillStyle = "#414c57";
-  ctx.strokeStyle = "#b6c7d4";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(-27, 0);
-  ctx.lineTo(18, -6);
-  ctx.lineTo(27, 0);
-  ctx.lineTo(18, 6);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = "#607889";
-  ctx.beginPath();
-  ctx.moveTo(1, 0);
-  ctx.lineTo(15, -18);
-  ctx.lineTo(8, -2);
-  ctx.lineTo(15, 18);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "#ff8c4e";
-  ctx.beginPath();
-  ctx.moveTo(25, -4);
-  ctx.lineTo(38 + Math.random() * 8, 0);
-  ctx.lineTo(25, 4);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.restore();
-}
-
-function drawHumanoidRobot(x, y, scale, enemyStyle, cannonAngle, facing) {
-  if (typeof facing !== "number") facing = 1;
+  options = options || {};
+  const img = sprite.img;
+  const width = height * (img.naturalWidth / img.naturalHeight);
+  const anchorX = typeof options.anchorX === "number" ? options.anchorX : sprite.anchorX;
+  const anchorY = typeof options.anchorY === "number" ? options.anchorY : sprite.anchorY;
+  const scaleX = typeof options.scaleX === "number" ? options.scaleX : 1;
+  const scaleY = typeof options.scaleY === "number" ? options.scaleY : 1;
 
   ctx.save();
   ctx.translate(x, y);
-  ctx.scale(scale * facing, scale);
-
-  const body = enemyStyle ? "#55343a" : "#963738";
-  const armor = enemyStyle ? "#73444b" : "#c64b43";
-  const edge = enemyStyle ? "#ff9c91" : "#f3ddd3";
-  const dark = enemyStyle ? "#2c2229" : "#37363b";
-  const joint = enemyStyle ? "#9c5b61" : "#6b7379";
-  const eye = enemyStyle ? "#ff705f" : "#8fe7ff";
-
-  ctx.strokeStyle = edge;
-  ctx.lineWidth = 1.7;
-
-  // backpack / rear silhouette
-  ctx.fillStyle = dark;
-  ctx.beginPath();
-  roundedRectPath(-23, -20, 12, 32, 4);
-  ctx.fill();
-  ctx.stroke();
-
-  // far leg
-  ctx.fillStyle = dark;
-  ctx.beginPath();
-  ctx.moveTo(-8, 13);
-  ctx.lineTo(4, 15);
-  ctx.lineTo(0, 42);
-  ctx.lineTo(-14, 42);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillRect(-16, 40, 19, 6);
-
-  // torso in side profile
-  ctx.fillStyle = body;
-  ctx.beginPath();
-  ctx.moveTo(-15, -22);
-  ctx.lineTo(12, -22);
-  ctx.lineTo(23, -10);
-  ctx.lineTo(18, 10);
-  ctx.lineTo(7, 20);
-  ctx.lineTo(-12, 15);
-  ctx.lineTo(-20, -4);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // chest plate
-  ctx.fillStyle = armor;
-  ctx.beginPath();
-  ctx.moveTo(4, -17);
-  ctx.lineTo(19, -10);
-  ctx.lineTo(15, 4);
-  ctx.lineTo(3, 2);
-  ctx.closePath();
-  ctx.fill();
-
-  // profile head, looking to local +X
-  ctx.fillStyle = dark;
-  ctx.beginPath();
-  ctx.moveTo(-5, -40);
-  ctx.lineTo(10, -40);
-  ctx.lineTo(18, -34);
-  ctx.lineTo(14, -26);
-  ctx.lineTo(-7, -26);
-  ctx.lineTo(-10, -33);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = eye;
-  ctx.fillRect(8, -34, 8, 3);
-  ctx.fillStyle = armor;
-  ctx.fillRect(-7, -38, 5, 9);
-
-  // shoulder and near arm
-  ctx.fillStyle = armor;
-  ctx.beginPath();
-  ctx.arc(13, -15, 8, 0, TAU);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = dark;
-  ctx.beginPath();
-  ctx.moveTo(16, -8);
-  ctx.lineTo(24, -4);
-  ctx.lineTo(19, 19);
-  ctx.lineTo(9, 16);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = joint;
-  ctx.beginPath();
-  ctx.arc(17, 16, 5, 0, TAU);
-  ctx.fill();
-
-  // near leg
-  ctx.fillStyle = armor;
-  ctx.beginPath();
-  ctx.moveTo(5, 16);
-  ctx.lineTo(17, 17);
-  ctx.lineTo(15, 43);
-  ctx.lineTo(2, 43);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = dark;
-  ctx.beginPath();
-  ctx.moveTo(1, 41);
-  ctx.lineTo(17, 41);
-  ctx.lineTo(23, 47);
-  ctx.lineTo(1, 47);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // twin shoulder cannon, seen from the side
-  const localCannonAngle = facing > 0 ? cannonAngle : Math.PI - cannonAngle;
-  ctx.save();
-  ctx.translate(-1, -23);
-  ctx.rotate(localCannonAngle || 0);
-
-  ctx.fillStyle = "#272b31";
-  ctx.strokeStyle = edge;
-  ctx.beginPath();
-  roundedRectPath(-9, -7, 45, 7, 3);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = enemyStyle ? "#6e3a40" : "#a63d3a";
-  ctx.beginPath();
-  roundedRectPath(-6, 2, 40, 7, 3);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = "#181b20";
-  ctx.fillRect(29, -5, 13, 3);
-  ctx.fillRect(27, 4, 13, 3);
+  ctx.rotate(options.rotation || 0);
+  ctx.scale(scaleX, scaleY);
+  if (typeof options.alpha === "number") ctx.globalAlpha = options.alpha;
+  ctx.drawImage(img, -width * anchorX, -height * anchorY, width, height);
   ctx.restore();
+  return true;
+}
 
+function drawSpriteGlow(x, y, w, h, color, alpha) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = color.replace("ALPHA", String(alpha));
+  ctx.beginPath();
+  ctx.ellipse(x, y, w, h, 0, 0, TAU);
+  ctx.fill();
   ctx.restore();
 }
 
+function drawUfo(e) {
+  const pulse = Math.sin(e.phase * 3.1) * 0.5 + 0.5;
+  drawSpriteGlow(e.x, e.y + 8, 25 + pulse * 5, 8 + pulse * 2, "rgba(255,72,42,ALPHA)", 0.14 + pulse * 0.12);
+  drawSprite("ufo", e.x, e.y + Math.sin(e.phase * 1.8) * 2.5, 34, {
+    rotation: Math.sin(e.phase) * 0.06,
+    scaleY: 1 + Math.sin(e.phase * 2.7) * 0.025
+  });
+}
+
+function drawJet(e) {
+  const flicker = Math.sin(e.phase * 5.6) * 0.5 + 0.5;
+  drawSprite("jet", e.x, e.y, 32, {
+    rotation: Math.sin(e.phase * 0.9) * 0.035,
+    scaleX: 1 + flicker * 0.025
+  });
+}
+
+
+
 function drawRobotEnemy(e) {
-  drawHumanoidRobot(e.x, e.y, 0.36, true, Math.PI, -1);
+  const step = Math.sin(e.phase * 4.2);
+  drawSpriteGlow(e.x - 3, e.y - 18, 14, 8, "rgba(255,72,55,ALPHA)", 0.08 + Math.abs(step) * 0.05);
+  drawSprite("robot", e.x, e.y + step * 1.4, 52, {
+    rotation: step * 0.018,
+    scaleX: 1 + Math.abs(step) * 0.018
+  });
 }
 
 function drawEnemy(e) {
@@ -1533,7 +1422,14 @@ function drawEnemy(e) {
 function drawBoss() {
   if (!boss) return;
 
-  drawHumanoidRobot(boss.x, boss.y, stageIndex === 0 ? 0.58 : 0.66, true, boss.angle, -1);
+  const pulse = Math.sin(boss.phase * 4) * 0.5 + 0.5;
+  const height = stageIndex === 0 ? 82 : 94;
+  drawSpriteGlow(boss.x - 6, boss.y - 25, 24 + pulse * 6, 11 + pulse * 3, "rgba(255,70,70,ALPHA)", 0.10 + pulse * 0.12);
+  drawSprite("boss", boss.x, boss.y + Math.sin(boss.phase * 3.2) * 1.8, height, {
+    rotation: Math.sin(boss.phase * 1.7) * 0.025,
+    scaleX: 1 + pulse * 0.018,
+    scaleY: 1 + pulse * 0.012
+  });
 
   ctx.save();
   ctx.translate(boss.x, boss.y);
@@ -1545,279 +1441,31 @@ function drawBoss() {
   ctx.restore();
 }
 
-function drawPlayerRobot(x, y, cannonAngle, scale) {
+function drawPlayerSprite(x, y, cannonAngle, scale) {
   if (typeof scale !== "number") scale = 0.38;
 
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(scale, scale);
+  const t = performance.now() * 0.001;
+  const height = 148 * scale;
+  const unit = height / 56;
+  const clockPulse = clockUp && gameState === "playing" ? 1 : 0;
+  const bob = Math.sin(t * 8.5) * 0.7 * unit;
+  const lean = Math.max(-0.035, Math.min(0.035, Math.sin(cannonAngle || 0) * 0.025));
 
-  const red = "#a9373c";
-  const redHi = "#d44a47";
-  const white = "#eee9e3";
-  const whiteShade = "#c9c8c5";
-  const frame = "#20262d";
-  const frameHi = "#4b5560";
-  const cyan = "#7feaff";
-  const cyanDim = "#3ba8b9";
+  if (clockPulse) {
+    const flame = Math.sin(t * 36) * 0.5 + 0.5;
+    drawSpriteGlow(x - 15 * unit, y + 15 * unit, 22 * unit + flame * 8 * unit, 7 * unit, "rgba(255,112,30,ALPHA)", 0.15 + flame * 0.12);
+    drawSpriteGlow(x - 4 * unit, y + 19 * unit, 16 * unit + flame * 6 * unit, 5 * unit, "rgba(105,223,255,ALPHA)", 0.11 + flame * 0.10);
+  }
 
-  ctx.strokeStyle = "#e7ddd6";
-  ctx.lineWidth = 1.6;
+  drawSprite("player", x, y + bob, height, {
+    rotation: lean + Math.sin(t * 10.5) * 0.006,
+    scaleX: 1 + clockPulse * Math.sin(t * 18) * 0.018,
+    scaleY: 1 + Math.sin(t * 9) * 0.006
+  });
+}
 
-  // Backpack block inspired by option 3: compact, military, dense.
-  ctx.fillStyle = frame;
-  ctx.beginPath();
-  roundedRectPath(-25, -27, 18, 44, 4);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = cyanDim;
-  ctx.fillRect(-23, -18, 4, 10);
-  ctx.fillRect(-23, 1, 4, 10);
-
-  // Rear shoulder armor.
-  ctx.fillStyle = red;
-  ctx.beginPath();
-  ctx.moveTo(-18, -25);
-  ctx.lineTo(-3, -29);
-  ctx.lineTo(1, -13);
-  ctx.lineTo(-15, -8);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // Rear leg.
-  ctx.fillStyle = frameHi;
-  ctx.beginPath();
-  ctx.moveTo(-8, 12);
-  ctx.lineTo(1, 14);
-  ctx.lineTo(-2, 43);
-  ctx.lineTo(-12, 43);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // Main torso: broader and more armored than previous design.
-  ctx.fillStyle = red;
-  ctx.beginPath();
-  ctx.moveTo(-12, -24);
-  ctx.lineTo(8, -26);
-  ctx.lineTo(24, -17);
-  ctx.lineTo(26, -2);
-  ctx.lineTo(15, 13);
-  ctx.lineTo(4, 18);
-  ctx.lineTo(-10, 14);
-  ctx.lineTo(-19, 1);
-  ctx.lineTo(-18, -12);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // White chest wedge.
-  ctx.fillStyle = white;
-  ctx.beginPath();
-  ctx.moveTo(2, -20);
-  ctx.lineTo(18, -15);
-  ctx.lineTo(16, -5);
-  ctx.lineTo(3, -2);
-  ctx.lineTo(-3, -9);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = whiteShade;
-  ctx.stroke();
-
-  // Cyan chest sensor.
-  ctx.fillStyle = cyan;
-  ctx.beginPath();
-  ctx.moveTo(11, -10);
-  ctx.lineTo(19, -8);
-  ctx.lineTo(17, -4);
-  ctx.lineTo(10, -5);
-  ctx.closePath();
-  ctx.fill();
-
-  // Waist.
-  ctx.strokeStyle = "#e7ddd6";
-  ctx.fillStyle = frame;
-  ctx.beginPath();
-  roundedRectPath(-8, 10, 18, 8, 2);
-  ctx.fill();
-  ctx.stroke();
-
-  // Head: compact military profile, shorter crest than option 2/4.
-  ctx.fillStyle = red;
-  ctx.beginPath();
-  ctx.moveTo(-5, -42);
-  ctx.lineTo(9, -43);
-  ctx.lineTo(17, -37);
-  ctx.lineTo(16, -29);
-  ctx.lineTo(3, -26);
-  ctx.lineTo(-7, -30);
-  ctx.lineTo(-10, -36);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // White face plate.
-  ctx.fillStyle = white;
-  ctx.beginPath();
-  ctx.moveTo(5, -37);
-  ctx.lineTo(16, -35);
-  ctx.lineTo(13, -29);
-  ctx.lineTo(5, -29);
-  ctx.lineTo(1, -33);
-  ctx.closePath();
-  ctx.fill();
-
-  // Single horn / antenna from option 3.
-  ctx.fillStyle = white;
-  ctx.beginPath();
-  ctx.moveTo(0, -42);
-  ctx.lineTo(7, -53);
-  ctx.lineTo(5, -41);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = cyan;
-  ctx.fillRect(7, -35, 8, 2.5);
-
-  // Large forward shoulder armor.
-  ctx.fillStyle = redHi;
-  ctx.beginPath();
-  ctx.moveTo(6, -22);
-  ctx.lineTo(23, -19);
-  ctx.lineTo(27, -9);
-  ctx.lineTo(12, -5);
-  ctx.lineTo(6, -10);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = "#f0ddd5";
-  ctx.stroke();
-
-  // Small white marking suggesting "03".
-  ctx.fillStyle = white;
-  ctx.fillRect(11, -17, 7, 2);
-  ctx.fillRect(11, -13, 5, 2);
-
-  // Arm.
-  ctx.fillStyle = frame;
-  ctx.beginPath();
-  ctx.moveTo(18, -7);
-  ctx.lineTo(25, -3);
-  ctx.lineTo(21, 16);
-  ctx.lineTo(12, 15);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = red;
-  ctx.beginPath();
-  ctx.moveTo(13, 12);
-  ctx.lineTo(22, 13);
-  ctx.lineTo(22, 20);
-  ctx.lineTo(12, 19);
-  ctx.closePath();
-  ctx.fill();
-
-  // Front thigh: strong white armor, option 3 signature.
-  ctx.fillStyle = white;
-  ctx.beginPath();
-  ctx.moveTo(3, 16);
-  ctx.lineTo(15, 16);
-  ctx.lineTo(17, 29);
-  ctx.lineTo(11, 34);
-  ctx.lineTo(1, 31);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = whiteShade;
-  ctx.stroke();
-
-  // Knee.
-  ctx.fillStyle = redHi;
-  ctx.beginPath();
-  ctx.moveTo(6, 29);
-  ctx.lineTo(17, 31);
-  ctx.lineTo(14, 39);
-  ctx.lineTo(4, 38);
-  ctx.closePath();
-  ctx.fill();
-
-  // Shin.
-  ctx.fillStyle = frame;
-  ctx.beginPath();
-  ctx.moveTo(4, 37);
-  ctx.lineTo(14, 38);
-  ctx.lineTo(13, 47);
-  ctx.lineTo(2, 47);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = "#e7ddd6";
-  ctx.stroke();
-
-  // Rear thigh white armor.
-  ctx.fillStyle = white;
-  ctx.beginPath();
-  ctx.moveTo(-8, 14);
-  ctx.lineTo(1, 15);
-  ctx.lineTo(0, 31);
-  ctx.lineTo(-9, 34);
-  ctx.lineTo(-13, 27);
-  ctx.closePath();
-  ctx.fill();
-
-  // Feet, chunky but compact.
-  ctx.fillStyle = red;
-  ctx.beginPath();
-  ctx.moveTo(-13, 42);
-  ctx.lineTo(1, 42);
-  ctx.lineTo(6, 48);
-  ctx.lineTo(-16, 48);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(1, 43);
-  ctx.lineTo(14, 43);
-  ctx.lineTo(22, 48);
-  ctx.lineTo(-1, 48);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // Twin long shoulder cannons: dominant silhouette from option 3.
-  ctx.save();
-  ctx.translate(-2, -27);
-  ctx.rotate(cannonAngle || 0);
-
-  ctx.fillStyle = frame;
-  ctx.strokeStyle = "#d9d4ce";
-  ctx.beginPath();
-  roundedRectPath(-8, -9, 58, 7, 2.5);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = red;
-  ctx.beginPath();
-  roundedRectPath(-6, 1, 55, 7, 2.5);
-  ctx.fill();
-  ctx.stroke();
-
-  // White cannon stripes.
-  ctx.fillStyle = white;
-  ctx.fillRect(22, -8, 8, 5);
-  ctx.fillRect(20, 2, 8, 5);
-
-  // Dark muzzles + cyan tips.
-  ctx.fillStyle = "#0c1116";
-  ctx.fillRect(42, -7.5, 12, 4);
-  ctx.fillRect(41, 2.5, 12, 4);
-  ctx.fillStyle = cyan;
-  ctx.fillRect(51, -6.7, 2, 2.5);
-  ctx.fillRect(50, 3.3, 2, 2.5);
-
-  ctx.restore();
-  ctx.restore();
+function drawPlayerRobot(x, y, cannonAngle, scale) {
+  drawPlayerSprite(x, y, cannonAngle, scale);
 }
 
 function drawPlayer() {
